@@ -297,14 +297,6 @@ class memTherm:
     self.stat_name_write = stat_write
     stat_component_rd, stat_name_read = stat_read.rsplit('.', 1)
     stat_component_wr, stat_name_write = stat_write.rsplit('.', 1)
-    
-    if mem_dtm != 'off': 
-      stat_write_lowpower = 'dram.bank_write_access_counter_lowpower'       #from sniper C-code
-      stat_read_lowpower = 'dram.bank_read_access_counter_lowpower'       #from sniper C-code
-      self.stat_name_read_lowpower = stat_read_lowpower
-      self.stat_name_write_lowpower= stat_write_lowpower
-      stat_component_rd_lowpower, stat_name_read_lowpower = stat_read_lowpower.rsplit('.', 1)
-      stat_component_wr_lowpower, stat_name_write_lowpower = stat_write_lowpower.rsplit('.', 1)
 
     stat_bank_mode = 'dram.bank_mode'
     self.stat_name_bank_mode = stat_bank_mode
@@ -321,24 +313,14 @@ class memTherm:
 
     self.sd = sim.util.StatsDelta()
 
-    if mem_dtm != 'off':
-      self.stats = {
-        'time': [ self.getStatsGetter('performance_model', core, 'elapsed_time') for core in range(sim.config.ncores) ],
-        'ffwd_time': [ self.getStatsGetter('fastforward_performance_model', core, 'fastforwarded_time') for core in range(sim.config.ncores) ],
-        'stat_rd': [ self.getStatsGetter(stat_component_rd, bank, stat_name_read) for bank in range(NUM_BANKS) ],
-        'stat_wr': [ self.getStatsGetter(stat_component_wr, bank, stat_name_write) for bank in range(NUM_BANKS) ],
-        'stat_rd_lowpower': [ self.getStatsGetter(stat_component_rd_lowpower, bank, stat_name_read_lowpower) for bank in range(NUM_BANKS) ],
-        'stat_wr_lowpower': [ self.getStatsGetter(stat_component_wr_lowpower, bank, stat_name_write_lowpower) for bank in range(NUM_BANKS) ],
-        'stat_bank_mode': [ self.getStatsGetter(stat_component_bank_mode, bank, stat_name_bank_mode) for bank in range(NUM_BANKS)],
-      }
-    else:
-      self.stats = {
-      'time': [ self.getStatsGetter('performance_model', core, 'elapsed_time') for core in range(sim.config.ncores) ],
-      'ffwd_time': [ self.getStatsGetter('fastforward_performance_model', core, 'fastforwarded_time') for core in range(sim.config.ncores) ],
-      'stat_rd': [ self.getStatsGetter(stat_component_rd, bank, stat_name_read) for bank in range(NUM_BANKS) ],
-      'stat_wr': [ self.getStatsGetter(stat_component_wr, bank, stat_name_write) for bank in range(NUM_BANKS) ],
-      'stat_bank_mode': [ self.getStatsGetter(stat_component_bank_mode, bank, stat_name_bank_mode) for bank in range(NUM_BANKS)],
-      }
+    self.stats = {
+    'time': [ self.getStatsGetter('performance_model', core, 'elapsed_time') for core in range(sim.config.ncores) ],
+    'ffwd_time': [ self.getStatsGetter('fastforward_performance_model', core, 'fastforwarded_time') for core in range(sim.config.ncores) ],
+    'stat_rd': [ self.getStatsGetter(stat_component_rd, bank, stat_name_read) for bank in range(NUM_BANKS) ],
+    'stat_wr': [ self.getStatsGetter(stat_component_wr, bank, stat_name_write) for bank in range(NUM_BANKS) ],
+    'stat_bank_mode': [ self.getStatsGetter(stat_component_bank_mode, bank, stat_name_bank_mode) for bank in range(NUM_BANKS)],
+    }
+    
     #print the initial header into different log/trace files
     gen_ptrace_header()
     ptrace_header = gen_ptrace_header()
@@ -407,31 +389,7 @@ class memTherm:
       self.fd.write(' %u' % statdiff_wr)
     self.fd.write('\n')
 
-    if mem_dtm != 'off':
-      if self.isTerminal:
-        self.fd.write('[STAT:%s] ' % self.stat_name_read_lowpower)
-  #    self.fd.write('%u' % (time / 1e6)) # Time in ns
-      access_rates_read_lowpower = [0 for number in xrange(NUM_BANKS)]
-      #print self.stats['stat'][0].__dict__	#prints the fields of the object
-      for bank in range(NUM_BANKS):
-        statdiff_rd_lowpower = self.stats['stat_rd_lowpower'][bank].last
-        access_rates_read_lowpower[bank] = statdiff_rd_lowpower
-        self.fd.write(' %u' % statdiff_rd_lowpower)
-      self.fd.write('\n')
-
-      if self.isTerminal:
-        self.fd.write('[STAT:%s] ' % self.stat_name_write_lowpower)
-      access_rates_write_lowpower = [0 for number in xrange(NUM_BANKS)]
-      #print self.stats['stat'][0].__dict__	#prints the fields of the object
-      for bank in range(NUM_BANKS):
-        statdiff_wr_lowpower = self.stats['stat_wr_lowpower'][bank].last
-        access_rates_write_lowpower[bank] = statdiff_wr_lowpower
-        self.fd.write(' %u' % statdiff_wr_lowpower)
-      self.fd.write('\n')
-
-      return access_rates_read, access_rates_write, access_rates_read_lowpower, access_rates_write_lowpower
-
-    return access_rates_read, access_rates_write, [], []
+    return access_rates_read, access_rates_write
 
 
   def write_bank_mode_trace(self, time, time_delta):
@@ -476,7 +434,7 @@ class memTherm:
 
     # calculate power trace using access rate and other parameters
   def calc_power_trace(self, time, time_delta):
-    accesses_read, accesses_write, accesses_read_lowpower, accesses_write_lowpower = self.get_access_rates(time, time_delta)
+    accesses_read, accesses_write = self.get_access_rates(time, time_delta)
  #    print accesses 
 
     avg_no_refresh_intervals_in_timestep =  timestep/t_refi                                                     # 20/7.8 = 2.56 refreshes on an average 

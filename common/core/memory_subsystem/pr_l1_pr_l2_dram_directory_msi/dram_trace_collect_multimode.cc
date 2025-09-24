@@ -1,6 +1,6 @@
 #include <vector>
 #include "dram_cntlr.h"
-#include "dram_trace_collect.h"
+#include "dram_trace_collect_multimode.h"
 #include "memory_manager.h"
 #include "core.h"
 #include "log.h"
@@ -18,12 +18,10 @@
 
 using namespace std;
 
-#define LOW_POWER 0     // Memory power mode.
-#define NORMAL_POWER 1
-
 // Global variables are initialized to 0 by default
 
 UInt64 NUM_OF_BANKS;
+UInt64 NUM_OF_MODES;
 UInt64 BANK_ADDRESS_BITS;
 UInt64 BANK_OFFSET_IN_PA;
 UInt64 BANKS_PER_LAYER;
@@ -35,11 +33,9 @@ String TYPE_OF_STACK;
 unsigned long num_of_dram_reads;
 unsigned long num_of_dram_writes;
 
-UInt64 read_access_count_per_bank[MAX_NUM_OF_BANKS];
-UInt64 read_access_count_export[MAX_NUM_OF_BANKS];
+UInt64 read_access_count_per_bank[MAX_NUM_OF_BANKS][MAX_NUM_OF_MODES];
+UInt64 read_access_count_export[MAX_NUM_OF_BANKS][MAX_NUM_OF_MODES];
 
-UInt64 read_access_count_per_bank_lowpower[MAX_NUM_OF_BANKS];
-UInt64 read_access_count_export_lowpower[MAX_NUM_OF_BANKS];
 UInt64 bank_mode_export[MAX_NUM_OF_BANKS]; // For tracking memory bank power modes.
 
 UInt32 read_access_count;
@@ -47,11 +43,8 @@ UInt64 read_interval_start_time;
 UInt32 read_bank_accessed;
 UInt32 read_last_printed_timestamp;
 
-UInt64 write_access_count_per_bank[MAX_NUM_OF_BANKS];
-UInt64 write_access_count_export[MAX_NUM_OF_BANKS];
-
-UInt64 write_access_count_per_bank_lowpower[MAX_NUM_OF_BANKS];
-UInt64 write_access_count_export_lowpower[MAX_NUM_OF_BANKS];
+UInt64 write_access_count_per_bank[MAX_NUM_OF_BANKS][MAX_NUM_OF_MODES];
+UInt64 write_access_count_export[MAX_NUM_OF_BANKS][MAX_NUM_OF_MODES];
 
 UInt32 write_access_count;
 UInt64 write_interval_start_time;
@@ -85,6 +78,7 @@ void read_memory_config(core_id_t requester)
     TYPE_OF_STACK = Sim()->getCfg()->getStringArray("memory/type_of_stack", requester);
     NUM_OF_CHANNELS = Sim()->getCfg()->getInt("memory/num_channels");
     NUM_OF_BANKS = Sim()->getCfg()->getInt("memory/num_banks");
+    NUM_OF_MODES = Sim()->getCfg()->getInt("memory/num_modes"); // TBD
     //BANK_ADDRESS_BITS = Sim()->getCfg()->getInt("memory/num_bank_address_bits");
     BANK_ADDRESS_BITS = log2(NUM_OF_BANKS);
     BANK_OFFSET_IN_PA = Sim()->getCfg()->getInt("memory/bank_offset_in_pa");
@@ -118,12 +112,13 @@ dram_read_trace(IntPtr address, core_id_t requester, SubsecondTime now, UInt64 m
         }
         num_of_dram_reads++;
   
-        UInt32 i = 0;
+        UInt32 i = 0, j = 0;
         if(total_access_count==0){
             registerStatsMetric("dram", 0 , "myreads", &m_reads);
             for(i = 0; i < NUM_OF_BANKS; i = i + 1){
-                read_access_count_per_bank[i]=0;
-                read_access_count_per_bank_lowpower[i]=0;
+	      for (j = 0; j < NUM_OF_MODES; j = j + 1){
+                read_access_count_per_bank[i][j]=0;
+	      }
             }
         }
 
@@ -178,8 +173,8 @@ dram_read_trace(IntPtr address, core_id_t requester, SubsecondTime now, UInt64 m
                 rdt[read_adv_count].rd_interval_start_time = read_last_printed_timestamp + ACCUMULATION_TIME;
                 rdt[read_adv_count].read_access_count_per_epoch = 0;
                 for(UInt32 i = 0; i < NUM_OF_BANKS; i = i + 1 ){
-                    rdt[read_adv_count].bank_read_access_count[i] = 0;
-                    rdt[read_adv_count].bank_read_access_count_lowpower[i] = 0;
+		  for(UInt32 j = 0; j < NUM_OF_MODES; j = j + 1 )
+                    rdt[read_adv_count].bank_read_access_count[i][j] = 0;
                 }
                 ++read_adv_count;
                 read_last_printed_timestamp =  read_last_printed_timestamp + ACCUMULATION_TIME;
@@ -190,28 +185,24 @@ dram_read_trace(IntPtr address, core_id_t requester, SubsecondTime now, UInt64 m
             rdt[read_adv_count].read_access_count_per_epoch = read_access_count;
             //printf("\nRead:");
             for(UInt32 i = 0; i < NUM_OF_BANKS; i = i + 1 ){
-                //printf("%d,", read_access_count_per_bank[i]);
-                rdt[read_adv_count].bank_read_access_count[i] = read_access_count_per_bank[i];
-                rdt[read_adv_count].bank_read_access_count_lowpower[i] = read_access_count_per_bank_lowpower[i];
-                read_access_count_export[i] = read_access_count_per_bank[i];
-                read_access_count_export_lowpower[i] = read_access_count_per_bank_lowpower[i];
-                read_access_count_per_bank[i]=0;
-                read_access_count_per_bank_lowpower[i]=0;
+	      for(UInt32 j = 0; i < NUM_OF_MODES; j = j + 1 ){
+		//printf("%d,", read_access_count_per_bank[i][j]);
+                rdt[read_adv_count].bank_read_access_count[i][j] = read_access_count_per_bank[i][j];
+                read_access_count_export[i][j] = read_access_count_per_bank[i][j];
+                read_access_count_per_bank[i][j]=0;
               }
+	    }
             ++read_adv_count;
             read_access_count=0;
             read_last_printed_timestamp = read_interval_start_time;
         }
         else {
-            if (Sim()->m_bank_modes[read_bank_accessed] == NORMAL_POWER)
-            {
-                ++read_access_count_per_bank[read_bank_accessed];
-            }
-            else
-            {
-                ++read_access_count_per_bank_lowpower[read_bank_accessed];
-            }
-            ++read_access_count;
+	  for(bank_mode = 0; bank_mode < NUM_OF_MODES; bank_mode++){
+	    if (Sim()->m_bank_modes[read_bank_accessed] == bank_mode){
+	      ++read_access_count_per_bank[read_bank_accessed][bank_mode];
+	    }
+	  }
+	  ++read_access_count;
         }
     }
 }
@@ -240,13 +231,14 @@ dram_write_trace(IntPtr address, core_id_t requester, SubsecondTime now, UInt64 
         printf("Dir. MSI: Write Access Count = %d\n",access_count++);
         #endif
 
-        UInt32 i = 0;
+        UInt32 i = 0, j = 0;
         if(total_access_count==0){
             registerStatsMetric("dram", 0 , "mywrites", &m_writes);
             for(i = 0; i < NUM_OF_BANKS; i = i + 1){
-                write_access_count_per_bank[i]=0;
-                write_access_count_per_bank_lowpower[i]=0;
-            }
+	      for(j = 0; j < NUM_OF_MODES; j = j + 1){
+                write_access_count_per_bank[i][j]=0;
+	      }
+	    }
         }
 
         ++total_access_count;
@@ -298,9 +290,10 @@ dram_write_trace(IntPtr address, core_id_t requester, SubsecondTime now, UInt64 
                 wrt[write_adv_count].wr_interval_start_time = write_last_printed_timestamp + ACCUMULATION_TIME;
                 wrt[write_adv_count].write_access_count_per_epoch = 0;
                 for(UInt32 i = 0; i < NUM_OF_BANKS; i = i + 1 ){
-                    wrt[write_adv_count].bank_write_access_count[i] = 0;
-                    wrt[write_adv_count].bank_write_access_count_lowpower[i] = 0;
-                }
+		  for(UInt32 j = 0; j < NUM_OF_MODES; j = j + 1 ){
+                    wrt[write_adv_count].bank_write_access_count[i][j] = 0;
+		  }
+		}
                 ++write_adv_count;
                 write_last_printed_timestamp =  write_last_printed_timestamp + ACCUMULATION_TIME;
                 wrt.push_back(write_trace_data());
@@ -310,29 +303,25 @@ dram_write_trace(IntPtr address, core_id_t requester, SubsecondTime now, UInt64 
             wrt[write_adv_count].write_access_count_per_epoch = write_access_count;
             //printf("\nWrite:");
             for(UInt32 i = 0; i < NUM_OF_BANKS; i = i + 1 ){
+	      for(UInt32 j = 0; j < NUM_OF_MODES; j = j + 1 ){
                 //printf("%d,", write_access_count_per_bank[i]);
-                wrt[write_adv_count].bank_write_access_count[i] = write_access_count_per_bank[i];
-                write_access_count_export[i] = write_access_count_per_bank[i];
-                write_access_count_per_bank[i]=0;
-
-                wrt[write_adv_count].bank_write_access_count_lowpower[i] = write_access_count_per_bank_lowpower[i];
-                write_access_count_export_lowpower[i] = write_access_count_per_bank_lowpower[i];
-                write_access_count_per_bank_lowpower[i]=0;
+                wrt[write_adv_count].bank_write_access_count[i][j] = write_access_count_per_bank[i][j];
+                write_access_count_export[i][j] = write_access_count_per_bank[i][j];
+                write_access_count_per_bank[i][j]=0;
               }
+	    }
             ++write_adv_count;
             write_access_count=0;
             write_last_printed_timestamp = write_interval_start_time;
         }
         else {
-            if (Sim()->m_bank_modes[read_bank_accessed] == NORMAL_POWER)
-            {
-                ++write_access_count_per_bank[write_bank_accessed];
-            }
-            else
-            {
-                ++write_access_count_per_bank_lowpower[write_bank_accessed];
-            }
-            ++write_access_count;
+	  for(bank_mode = 0; bank_mode < NUM_OF_MODES; bank_mode++){
+	    // a possible bug? should be "write_bank_accessed"?
+            if (Sim()->m_bank_modes[read_bank_accessed] == bank_mode){
+	      ++write_access_count_per_bank[write_bank_accessed][bank_mode];
+	    }
+	  }
+	  ++write_access_count;
         }
     }
 }

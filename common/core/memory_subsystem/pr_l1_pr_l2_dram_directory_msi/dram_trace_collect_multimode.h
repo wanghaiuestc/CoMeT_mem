@@ -22,21 +22,20 @@
 
 using namespace std;
 #define MAX_NUM_OF_BANKS (128)
+#define MAX_NUM_OF_MODES (32)
 
 struct read_trace_data
 {
       UInt64 rd_interval_start_time = 0;
       UInt32 read_access_count_per_epoch = 0;
-      UInt32 bank_read_access_count[MAX_NUM_OF_BANKS];
-      UInt32 bank_read_access_count_lowpower[MAX_NUM_OF_BANKS];
+      UInt32 bank_read_access_count[MAX_NUM_OF_BANKS][MAX_NUM_OF_MODES];
 };
 
 struct write_trace_data
 {
       UInt64 wr_interval_start_time = 0;
       UInt32 write_access_count_per_epoch = 0;
-      UInt32 bank_write_access_count[MAX_NUM_OF_BANKS]; 
-      UInt32 bank_write_access_count_lowpower[MAX_NUM_OF_BANKS];
+      UInt32 bank_write_access_count[MAX_NUM_OF_BANKS][MAX_NUM_OF_MODES]; 
 };
 
 void read_memory_config(core_id_t requester);
