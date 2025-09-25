@@ -17,7 +17,7 @@
 #include "policies/dvfsOndemand.h"
 #include "policies/mapFirstUnused.h"
 
-#include "policies/dramLowpower.h"
+#include "policies/dramLowpower_multimode.h"
 
 #include <iomanip>
 #include <random>

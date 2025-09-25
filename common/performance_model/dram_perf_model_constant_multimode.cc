@@ -4,7 +4,7 @@
 #include "config.hpp"
 #include "stats.h"
 #include "shmem_perf.h"
-#include "dram_trace_collect.h" // Used to calculate the bank number from an address.
+#include "dram_trace_collect_multimode.h" // Used to calculate the bank number from an address.
 
 /*
    This file has been extended to support a low power access latency,

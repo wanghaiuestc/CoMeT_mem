@@ -2,7 +2,7 @@
 
 #include "dram_directory_cache.h"
 #include "req_queue_list.h"
-#include "dram_cntlr.h"
+#include "dram_cntlr_multimode.h"
 #include "address_home_lookup.h"
 #include "shmem_req.h"
 #include "shmem_msg.h"

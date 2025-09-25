@@ -1,5 +1,5 @@
-#ifndef __DRAM_PERF_MODEL_CONSTANT_H__
-#define __DRAM_PERF_MODEL_CONSTANT_H__
+#ifndef __DRAM_PERF_MODEL_CONSTANT_MULTIMODE_H__
+#define __DRAM_PERF_MODEL_CONSTANT_MULTIMODE_H__
 
 #include "dram_perf_model.h"
 #include "queue_model.h"

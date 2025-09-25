@@ -5,7 +5,7 @@
 
 #include <unordered_map>
 #include <vector>
-#include "dram_cntlr.h"
+#include "dram_cntlr_multimode.h"
 #include "dram_perf_model.h"
 #include "shmem_msg.h"
 #include "shmem_perf.h"

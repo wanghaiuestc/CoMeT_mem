@@ -1,5 +1,5 @@
 #include <vector>
-#include "dram_cntlr.h"
+#include "dram_cntlr_multimode.h"
 #include "dram_trace_collect_multimode.h"
 #include "memory_manager.h"
 #include "core.h"

@@ -1,6 +1,6 @@
 #include "simulator.h"
 #include "dram_perf_model.h"
-#include "dram_perf_model_constant.h"
+#include "dram_perf_model_constant_multimode.h"
 #include "dram_perf_model_readwrite.h"
 #include "dram_perf_model_normal.h"
 #include "dram_perf_model_nvm.h"

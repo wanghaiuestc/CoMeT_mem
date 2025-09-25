@@ -2,8 +2,8 @@
  * This header implements the DRAM policy interface.
  */
 
-#ifndef __DRAMPOLICY_H
-#define __DRAMPOLICY_H
+#ifndef __DRAMPOLICY_MULTIMODE_H
+#define __DRAMPOLICY_MULTIMODE_H
 
 #include <map>
 

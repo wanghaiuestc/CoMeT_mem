@@ -2,12 +2,12 @@
  * This header implements memory DTM using a low power mode.
  */
 
-#ifndef __DRAM_LOWPOWER_H
-#define __DRAM_LOWPOWER_H
+#ifndef __DRAM_LOWPOWER_MULTIMODE_H
+#define __DRAM_LOWPOWER_MULTIMODE_H
 
 #include <map>
 
-#include "drampolicy.h"
+#include "drampolicy_multimode.h"
 #include "performance_counters.h"
 
 class DramLowpower : public DramPolicy {

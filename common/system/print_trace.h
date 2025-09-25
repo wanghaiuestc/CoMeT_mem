@@ -11,6 +11,6 @@
 #include "stats.h"
 #include "timer.h"
 #include "thread.h"
-#include "dram_cntlr.h"
+#include "dram_cntlr_multimode.h"
 
 void print_dram_trace();

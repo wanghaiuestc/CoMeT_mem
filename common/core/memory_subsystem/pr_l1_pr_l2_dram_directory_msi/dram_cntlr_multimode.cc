@@ -6,7 +6,7 @@
 #include "stats.h"
 #include "fault_injection.h"
 #include "shmem_perf.h"
-#include "dram_trace_collect.h"
+#include "dram_trace_collect_multimode.h"
 #include "simulator.h"
 
 #if 0

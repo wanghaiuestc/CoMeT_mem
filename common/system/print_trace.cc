@@ -12,8 +12,8 @@
 #include "stats.h"
 #include "timer.h"
 #include "thread.h"
-#include "dram_cntlr.h"
-#include "dram_trace_collect.h"
+#include "dram_cntlr_multimode.h"
+#include "dram_trace_collect_multimode.h"
 
 using namespace std;
 

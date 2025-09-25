@@ -14,8 +14,8 @@
 #include "policies/dvfspolicy.h"
 #include "policies/mappingpolicy.h"
 #include "policies/migrationpolicy.h"
-#include "policies/dramLowpower.h"
-#include "policies/drampolicy.h"
+#include "policies/dramLowpower_multimode.h"
+#include "policies/drampolicy_multimode.h"
 
 
 //This data structure maintains the state of the tasks.
