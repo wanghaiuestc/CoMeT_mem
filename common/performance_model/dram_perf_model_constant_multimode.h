@@ -11,8 +11,7 @@ class DramPerfModelConstant : public DramPerfModel
 {
    private:
       QueueModel* m_queue_model;
-      SubsecondTime m_dram_access_cost;
-      SubsecondTime m_dram_access_cost_lowpower;
+      SubsecondTime m_dram_access_cost[]; //TBD
       ComponentBandwidth m_dram_bandwidth;
 
       SubsecondTime m_total_queueing_delay;

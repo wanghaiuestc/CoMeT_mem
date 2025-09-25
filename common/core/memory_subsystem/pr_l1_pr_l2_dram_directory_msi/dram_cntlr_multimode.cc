@@ -1,4 +1,4 @@
-#include "dram_cntlr.h"
+#include "dram_cntlr_multimode.h"
 #include "memory_manager.h"
 #include "core.h"
 #include "log.h"
@@ -17,10 +17,8 @@
 #  define MYLOG(...) {}
 #endif
 
-extern UInt64 read_access_count_export[MAX_NUM_OF_BANKS];
-extern UInt64 read_access_count_export_lowpower[MAX_NUM_OF_BANKS];
-extern UInt64 write_access_count_export[MAX_NUM_OF_BANKS];
-extern UInt64 write_access_count_export_lowpower[MAX_NUM_OF_BANKS];
+extern UInt64 read_access_count_export[MAX_NUM_OF_BANKS][MAX_NUM_OF_MODES];
+extern UInt64 write_access_count_export[MAX_NUM_OF_BANKS][MAX_NUM_OF_MODES];
 extern UInt64 bank_mode_export[MAX_NUM_OF_BANKS]; // Keep track of memory bank power status.
 extern UInt64 NUM_OF_BANKS;
 
@@ -54,11 +52,9 @@ DramCntlr::DramCntlr(MemoryManagerBase* memory_manager,
 
    if (stats_initialized == 0) {
       for (UInt64 i=0; i<NUM_OF_BANKS;i++) {
+	// Do not need any change, since the first address is sent?
          registerStatsMetric("dram", i, "bank_read_access_counter", &read_access_count_export[i]);
          registerStatsMetric("dram", i, "bank_write_access_counter", &write_access_count_export[i]);
-
-         registerStatsMetric("dram", i, "bank_read_access_counter_lowpower", &read_access_count_export_lowpower[i]);
-         registerStatsMetric("dram", i, "bank_write_access_counter_lowpower", &write_access_count_export_lowpower[i]);
 
          registerStatsMetric("dram", i, "bank_mode", &Sim()->m_bank_modes[i]);
       }

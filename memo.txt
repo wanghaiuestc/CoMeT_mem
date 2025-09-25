@@ -1,0 +1,7 @@
+- Add the mode setting (mode number, latencies, powers, etc) in base.cfg, make sure it can be read using Sim()->getCfg()
+
+- Make sure the headers are correct for all the multimode files
+
+- Fix the m_dram_access_cost[] size in common/performance_model/dram_perf_model_constant_multimode.h, using extern const int?
+
+- Check in common/core/memory_subsystem/pr_l1_pr_l2_dram_directory_msi/dram_cntlr_multimode.cc, whether registerStatsMetric should distinguish modes. The registered data will be used in scripts/memTherm_core_multimode.py

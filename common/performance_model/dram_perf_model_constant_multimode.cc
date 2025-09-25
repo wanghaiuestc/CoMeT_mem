@@ -1,13 +1,10 @@
-#include "dram_perf_model_constant.h"
+#include "dram_perf_model_constant_multimode.h"
 #include "simulator.h"
 #include "config.h"
 #include "config.hpp"
 #include "stats.h"
 #include "shmem_perf.h"
 #include "dram_trace_collect.h" // Used to calculate the bank number from an address.
-
-#define LOW_POWER 0
-#define NORMAL_POWER 1
 
 /*
    This file has been extended to support a low power access latency,
@@ -25,14 +22,17 @@ DramPerfModelConstant::DramPerfModelConstant(core_id_t core_id,
 
 
    if(Sim()->getCfg()->getBool("perf_model/dram/cacti/enable_cacti"))  {
-      m_dram_access_cost = SubsecondTime::FS() * static_cast<uint64_t>(TimeConverter<float>::NStoFS(Sim()->getCfg()->getFloat("perf_model/dram/cacti/final_latency")));
+      m_dram_access_cost[0] = SubsecondTime::FS() * static_cast<uint64_t>(TimeConverter<float>::NStoFS(Sim()->getCfg()->getFloat("perf_model/dram/cacti/final_latency")));
    }
    else {
-      m_dram_access_cost = SubsecondTime::FS() * static_cast<uint64_t>(TimeConverter<float>::NStoFS(Sim()->getCfg()->getFloat("perf_model/dram/latency")));
+      m_dram_access_cost[0] = SubsecondTime::FS() * static_cast<uint64_t>(TimeConverter<float>::NStoFS(Sim()->getCfg()->getFloat("perf_model/dram/latency")));
    }
 
-   // Read the low power access cost.
-   m_dram_access_cost_lowpower  = SubsecondTime::FS() * static_cast<uint64_t>(TimeConverter<float>::NStoFS(Sim()->getCfg()->getFloat("perf_model/dram/latency_lowpower"))); // Operate in fs for higher precision before converting to uint64_t/SubsecondTime
+   // Read the low power access cost. TBD
+   int num_modes = Sim()->getCfg()->getInt("memory/num_modes");
+   for (int i = 1; i < num_modes; i++){
+     m_dram_access_cost[i]  = SubsecondTime::FS() * static_cast<uint64_t>(TimeConverter<float>::NStoFS(Sim()->getCfg()->getFloat("perf_model/dram/latency_lowpower"))); // Operate in fs for higher precision before converting to uint64_t/SubsecondTime
+   }
 
    if (Sim()->getCfg()->getBool("perf_model/dram/queue_model/enabled"))
    {
@@ -82,14 +82,12 @@ DramPerfModelConstant::getAccessLatency(SubsecondTime pkt_time, UInt64 pkt_size,
 
    SubsecondTime access_latency;
 
-   // Distinguish between dram power modes.
-   if (bank_mode == LOW_POWER) // Low power mode
-   {
-      access_latency = queue_delay + processing_time + m_dram_access_cost_lowpower;
-   }
-   else // Normal power mode.
-   {
-      access_latency = queue_delay + processing_time + m_dram_access_cost;
+   // Distinguish between dram power modes. TBD
+   for (int mode_i = 0; mode_i < num_modes; mode_i++){
+     if (bank_mode == mode_i)
+       {
+	 access_latency = queue_delay + processing_time + m_dram_access_cost[i];
+       }
    }
 
    perf->updateTime(pkt_time);
