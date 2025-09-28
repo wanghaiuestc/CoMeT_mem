@@ -18,6 +18,7 @@
 using namespace std;
 
 extern UInt64 NUM_OF_BANKS;
+extern UInt64 NUM_OF_MODES;
 extern vector<read_trace_data> rdt;
 extern vector<write_trace_data> wrt;
 extern UInt64 read_adv_count;
@@ -29,6 +30,7 @@ void print_dram_trace()
 
     //printf("advance counts %lu   %lu\n", read_adv_count , write_adv_count);
     UInt64 limit;
+    UInt64 bank_mode;
     if(read_adv_count < write_adv_count){
         limit = read_adv_count;
         for(UInt64 i=limit; i<write_adv_count; i++){
@@ -36,8 +38,8 @@ void print_dram_trace()
             rdt[i].rd_interval_start_time = wrt[i].wr_interval_start_time;
             rdt[i].read_access_count_per_epoch = 0;
             for(UInt64 j=0; j<NUM_OF_BANKS; j++){
-                rdt[i].bank_read_access_count[j] = 0;
-                rdt[i].bank_read_access_count_lowpower[j] = 0; // Added to keep track of low power read accesses.
+	      for (bank_mode=0; bank_mode < NUM_OF_MODES; bank_mode++)
+                rdt[i].bank_read_access_count[j][bank_mode] = 0;
             }
         }
 
@@ -51,8 +53,8 @@ void print_dram_trace()
                 wrt[i].wr_interval_start_time = rdt[i].rd_interval_start_time;
                 wrt[i].write_access_count_per_epoch = 0;
                 for(UInt64 j=0; j<NUM_OF_BANKS; j++){
-                    wrt[i].bank_write_access_count[j] = 0;
-                    wrt[i].bank_write_access_count_lowpower[j] = 0; // Added to keep track of low power write accesses.
+		  for (bank_mode=0; bank_mode < NUM_OF_MODES; bank_mode++)
+                    wrt[i].bank_write_access_count[j][bank_mode] = 0;
                 }
             }
 
@@ -68,7 +70,8 @@ void print_dram_trace()
         wrt[i].write_access_count_per_epoch, rdt[i].read_access_count_per_epoch+
         wrt[i].write_access_count_per_epoch);
         for(UInt64 j=0; j<NUM_OF_BANKS; j++){
-            printf("%u, ", rdt[i].bank_read_access_count[j] + rdt[i].bank_read_access_count_lowpower[j] + wrt[i].bank_write_access_count[j] + wrt[i].bank_write_access_count_lowpower[j]);
+	  for (bank_mode=0; bank_mode < NUM_OF_MODES; bank_mode++)
+            printf("%u, ", rdt[i].bank_read_access_count[j][bank_mode] + wrt[i].bank_write_access_count[j][bank_mode]);
         }
     }
 

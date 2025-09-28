@@ -6,12 +6,14 @@
 #include "fixed_types.h"
 #include "subsecond_time.h"
 #include "dram_cntlr_interface.h"
+#include "dram_trace_collect_multimode.h"
+
 
 class DramPerfModelConstant : public DramPerfModel
 {
    private:
       QueueModel* m_queue_model;
-      SubsecondTime m_dram_access_cost[]; //TBD
+      SubsecondTime m_dram_access_cost[MAX_NUM_OF_MODES]; //TBD
       ComponentBandwidth m_dram_bandwidth;
 
       SubsecondTime m_total_queueing_delay;

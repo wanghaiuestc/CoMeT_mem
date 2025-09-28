@@ -1,3 +1,22 @@
+#pragma once
+
+// Define to re-enable DramAccessCount
+//#define ENABLE_DRAM_ACCESS_COUNT
+
+#include <unordered_map>
+
+#include "dram_perf_model.h"
+#include "shmem_msg.h"
+#include "shmem_perf.h"
+#include "fixed_types.h"
+#include "memory_manager_base.h"
+#include "dram_cntlr_interface.h"
+#include "subsecond_time.h"
+#include "dram_trace_collect_multimode.h"
+
+class FaultInjector;
+
+namespace PrL1PrL2DramDirectoryMSI
 {
    class DramCntlr : public DramCntlrInterface
    {

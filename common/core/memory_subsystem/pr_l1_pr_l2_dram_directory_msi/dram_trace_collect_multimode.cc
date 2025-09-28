@@ -197,6 +197,7 @@ dram_read_trace(IntPtr address, core_id_t requester, SubsecondTime now, UInt64 m
             read_last_printed_timestamp = read_interval_start_time;
         }
         else {
+	  int bank_mode;
 	  for(bank_mode = 0; bank_mode < NUM_OF_MODES; bank_mode++){
 	    if (Sim()->m_bank_modes[read_bank_accessed] == bank_mode){
 	      ++read_access_count_per_bank[read_bank_accessed][bank_mode];
@@ -315,6 +316,7 @@ dram_write_trace(IntPtr address, core_id_t requester, SubsecondTime now, UInt64 
             write_last_printed_timestamp = write_interval_start_time;
         }
         else {
+	  int bank_mode;
 	  for(bank_mode = 0; bank_mode < NUM_OF_MODES; bank_mode++){
 	    // a possible bug? should be "write_bank_accessed"?
             if (Sim()->m_bank_modes[read_bank_accessed] == bank_mode){

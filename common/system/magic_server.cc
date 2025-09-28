@@ -11,7 +11,7 @@
 #include "stats.h"
 #include "timer.h"
 #include "thread.h"
-#include "print_trace.h"
+#include "print_trace_multimode.h"
 
 extern vector<read_trace_data> rdt;
 extern vector<write_trace_data> wrt;

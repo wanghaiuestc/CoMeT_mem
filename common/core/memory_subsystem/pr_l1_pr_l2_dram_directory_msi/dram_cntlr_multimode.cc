@@ -53,8 +53,8 @@ DramCntlr::DramCntlr(MemoryManagerBase* memory_manager,
    if (stats_initialized == 0) {
       for (UInt64 i=0; i<NUM_OF_BANKS;i++) {
 	// Do not need any change, since the first address is sent?
-         registerStatsMetric("dram", i, "bank_read_access_counter", &read_access_count_export[i]);
-         registerStatsMetric("dram", i, "bank_write_access_counter", &write_access_count_export[i]);
+         registerStatsMetric("dram", i, "bank_read_access_counter", &read_access_count_export[i][0]);
+         registerStatsMetric("dram", i, "bank_write_access_counter", &write_access_count_export[i][0]);
 
          registerStatsMetric("dram", i, "bank_mode", &Sim()->m_bank_modes[i]);
       }
