@@ -372,11 +372,14 @@ class memTherm:
       self.fd.write('[STAT:%s] ' % self.stat_name_read)
 #    self.fd.write('%u' % (time / 1e6)) # Time in ns
     access_rates_read = [0 for number in xrange(NUM_BANKS)]
+    print("******get_access_rates-access_rates_read: ", access_rates_read);
     #print self.stats['stat'][0].__dict__	#prints the fields of the object
     for bank in range(NUM_BANKS):
       statdiff_rd = self.stats['stat_rd'][bank].last
+      print("******stat_rd: ", self.stats['stat_rd'][bank])
       access_rates_read[bank] = statdiff_rd
       self.fd.write(' %u' % statdiff_rd)
+    print("******get_access_rates-access_rates_read: ", access_rates_read);
     self.fd.write('\n')
 #    print access_rates
     if self.isTerminal:
@@ -434,7 +437,9 @@ class memTherm:
 
     # calculate power trace using access rate and other parameters
   def calc_power_trace(self, time, time_delta):
+    print("******begin to calculate power...")
     accesses_read, accesses_write = self.get_access_rates(time, time_delta)
+    print("******accesses_read: ", accesses_read)
  #    print accesses 
 
     avg_no_refresh_intervals_in_timestep =  timestep/t_refi                                                     # 20/7.8 = 2.56 refreshes on an average 
