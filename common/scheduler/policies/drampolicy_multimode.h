@@ -7,8 +7,8 @@
 
 #include <map>
 
-#define LOW_POWER 0
-#define NORMAL_POWER 1
+#define LOW_POWER 1
+#define NORMAL_POWER 0
 
 class DramPolicy {
 public:

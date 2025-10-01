@@ -6,8 +6,8 @@ memTherm_core_multimode.py
 import sys, os, sim
 import reliability as rlb
 
-LOW_POWER = 0
-NORMAL_POWER = 1
+LOW_POWER = 1
+NORMAL_POWER = 0
 
 bank_size=int(sim.config.get('memory/bank_size'))
 no_columns = 1                                      # in Kilo
@@ -456,7 +456,7 @@ class memTherm:
         bank_power_trace[bank] =  (normal_power_access + low_power_access) / (timestep*1000) + bank_static_power + avg_refresh_power
 
       else:
-        bank_power_trace[bank] = (accesses_read[bank][1] * energy_per_read_access + accesses_write[bank][1] * energy_per_write_access)/(timestep*1000) \
+        bank_power_trace[bank] = (accesses_read[bank][0] * energy_per_read_access + accesses_write[bank][0] * energy_per_write_access)/(timestep*1000) \
                       + bank_static_power + avg_refresh_power
       bank_power_trace[bank] = round(bank_power_trace[bank], 3)
     logic_power_trace = ''

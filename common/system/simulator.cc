@@ -33,8 +33,7 @@
 #include <sstream>
 #include <regex>
 
-#define LOW_POWER 0 // Used for memory power mode.
-#define NORMAL_POWER 1
+#define NORMAL_POWER 0 // 0 represents normal power in multimode
 
 Simulator *Simulator::m_singleton;
 config::Config *Simulator::m_config_file;
