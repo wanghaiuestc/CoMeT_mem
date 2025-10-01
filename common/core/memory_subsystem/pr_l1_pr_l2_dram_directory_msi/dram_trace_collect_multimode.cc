@@ -185,8 +185,8 @@ dram_read_trace(IntPtr address, core_id_t requester, SubsecondTime now, UInt64 m
             rdt[read_adv_count].read_access_count_per_epoch = read_access_count;
             //printf("\nRead:");
             for(UInt32 i = 0; i < NUM_OF_BANKS; i = i + 1 ){
-	      for(UInt32 j = 0; i < NUM_OF_MODES; j = j + 1 ){
-		//printf("%d,", read_access_count_per_bank[i][j]);
+	      for(UInt32 j = 0; j < NUM_OF_MODES; j = j + 1 ){
+		//printf("val: %ld, bank%d, mode%d\t", read_access_count_per_bank[i][j], i, j);
                 rdt[read_adv_count].bank_read_access_count[i][j] = read_access_count_per_bank[i][j];
                 read_access_count_export[i][j] = read_access_count_per_bank[i][j];
                 read_access_count_per_bank[i][j]=0;

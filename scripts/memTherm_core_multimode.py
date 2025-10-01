@@ -64,6 +64,7 @@ banks_in_x = int(sim.config.get('memory/banks_in_x'))
 banks_in_y = int(sim.config.get('memory/banks_in_y'))
 banks_in_z = int(sim.config.get('memory/banks_in_z'))
 NUM_BANKS=int(sim.config.get('memory/num_banks'))
+NUM_MODES=int(sim.config.get('memory/num_modes'))
 #number_of_banks = NUM_BANKS
 #banks_in_z = number_of_banks/banks_in_x/banks_in_y  
 #banks_in_z = 2
@@ -316,8 +317,8 @@ class memTherm:
     self.stats = {
     'time': [ self.getStatsGetter('performance_model', core, 'elapsed_time') for core in range(sim.config.ncores) ],
     'ffwd_time': [ self.getStatsGetter('fastforward_performance_model', core, 'fastforwarded_time') for core in range(sim.config.ncores) ],
-    'stat_rd': [ self.getStatsGetter(stat_component_rd, bank, stat_name_read) for bank in range(NUM_BANKS) ],
-    'stat_wr': [ self.getStatsGetter(stat_component_wr, bank, stat_name_write) for bank in range(NUM_BANKS) ],
+    'stat_rd': [[ self.getStatsGetter(stat_component_rd, bank, stat_name_read+'_mode_'+str(mode)) for mode in range(NUM_MODES)] for bank in range(NUM_BANKS)],
+    'stat_wr': [[ self.getStatsGetter(stat_component_wr, bank, stat_name_write+'_mode_'+str(mode)) for mode in range(NUM_MODES)] for bank in range(NUM_BANKS)],
     'stat_bank_mode': [ self.getStatsGetter(stat_component_bank_mode, bank, stat_name_bank_mode) for bank in range(NUM_BANKS)],
     }
     
@@ -372,14 +373,12 @@ class memTherm:
       self.fd.write('[STAT:%s] ' % self.stat_name_read)
 #    self.fd.write('%u' % (time / 1e6)) # Time in ns
     access_rates_read = [0 for number in xrange(NUM_BANKS)]
-    print("******get_access_rates-access_rates_read: ", access_rates_read);
     #print self.stats['stat'][0].__dict__	#prints the fields of the object
     for bank in range(NUM_BANKS):
-      statdiff_rd = self.stats['stat_rd'][bank].last
-      print("******stat_rd: ", self.stats['stat_rd'][bank])
+      statdiff_rd = [self.stats['stat_rd'][bank][mode].last for mode in range(NUM_MODES)]
       access_rates_read[bank] = statdiff_rd
-      self.fd.write(' %u' % statdiff_rd)
-    print("******get_access_rates-access_rates_read: ", access_rates_read);
+      self.fd.write('b%u: ' % bank)
+      [self.fd.write('%u ' % statdiff_rd[mode]) for mode in range(NUM_MODES)]
     self.fd.write('\n')
 #    print access_rates
     if self.isTerminal:
@@ -387,9 +386,10 @@ class memTherm:
     access_rates_write = [0 for number in xrange(NUM_BANKS)]
     #print self.stats['stat'][0].__dict__	#prints the fields of the object
     for bank in range(NUM_BANKS):
-      statdiff_wr = self.stats['stat_wr'][bank].last
+      statdiff_wr = [self.stats['stat_wr'][bank][mode].last for mode in range(NUM_MODES)]
       access_rates_write[bank] = statdiff_wr
-      self.fd.write(' %u' % statdiff_wr)
+      self.fd.write('b%u: ' % bank)
+      [self.fd.write('%u ' % statdiff_wr[mode]) for mode in range(NUM_MODES)]
     self.fd.write('\n')
 
     return access_rates_read, access_rates_write
@@ -437,9 +437,7 @@ class memTherm:
 
     # calculate power trace using access rate and other parameters
   def calc_power_trace(self, time, time_delta):
-    print("******begin to calculate power...")
     accesses_read, accesses_write = self.get_access_rates(time, time_delta)
-    print("******accesses_read: ", accesses_read)
  #    print accesses 
 
     avg_no_refresh_intervals_in_timestep =  timestep/t_refi                                                     # 20/7.8 = 2.56 refreshes on an average 
@@ -458,7 +456,7 @@ class memTherm:
         bank_power_trace[bank] =  (normal_power_access + low_power_access) / (timestep*1000) + bank_static_power + avg_refresh_power
 
       else:
-        bank_power_trace[bank] = (accesses_read[bank] * energy_per_read_access + accesses_write[bank] * energy_per_write_access)/(timestep*1000) \
+        bank_power_trace[bank] = (accesses_read[bank][1] * energy_per_read_access + accesses_write[bank][1] * energy_per_write_access)/(timestep*1000) \
                       + bank_static_power + avg_refresh_power
       bank_power_trace[bank] = round(bank_power_trace[bank], 3)
     logic_power_trace = ''

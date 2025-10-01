@@ -21,6 +21,7 @@ extern UInt64 read_access_count_export[MAX_NUM_OF_BANKS][MAX_NUM_OF_MODES];
 extern UInt64 write_access_count_export[MAX_NUM_OF_BANKS][MAX_NUM_OF_MODES];
 extern UInt64 bank_mode_export[MAX_NUM_OF_BANKS]; // Keep track of memory bank power status.
 extern UInt64 NUM_OF_BANKS;
+extern UInt64 NUM_OF_MODES;
 
 UInt32 stats_initialized=0;
 
@@ -50,15 +51,23 @@ DramCntlr::DramCntlr(MemoryManagerBase* memory_manager,
 
    read_memory_config(memory_manager->getCore()->getId());
 
+   // store name of metric to register, one name for each bank mode
+   char read_access_counter_mode[35], write_access_counter_mode[35];
    if (stats_initialized == 0) {
-      for (UInt64 i=0; i<NUM_OF_BANKS;i++) {
-	// Do not need any change, since the first address is sent?
-         registerStatsMetric("dram", i, "bank_read_access_counter", &read_access_count_export[i][0]);
-         registerStatsMetric("dram", i, "bank_write_access_counter", &write_access_count_export[i][0]);
-
-         registerStatsMetric("dram", i, "bank_mode", &Sim()->m_bank_modes[i]);
-      }
-      stats_initialized = 1;
+     for (UInt64 j=0; j<NUM_OF_MODES;j++) {
+       snprintf(read_access_counter_mode, 35, "bank_read_access_counter_mode_%ld", j);
+       snprintf(write_access_counter_mode, 35, "bank_write_access_counter_mode_%ld", j);
+       printf("%s\n", read_access_counter_mode);
+       printf("%s\n", write_access_counter_mode);
+       for (UInt64 i=0; i<NUM_OF_BANKS;i++) {	
+	 registerStatsMetric("dram", i, read_access_counter_mode, &read_access_count_export[i][j]);
+	 registerStatsMetric("dram", i, write_access_counter_mode, &write_access_count_export[i][j]);
+       }	
+     }
+     for (UInt64 i=0; i<NUM_OF_BANKS;i++) {
+       registerStatsMetric("dram", i, "bank_mode", &Sim()->m_bank_modes[i]);
+     }
+     stats_initialized = 1;
    }
 }
 
