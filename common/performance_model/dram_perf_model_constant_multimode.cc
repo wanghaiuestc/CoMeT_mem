@@ -28,10 +28,10 @@ DramPerfModelConstant::DramPerfModelConstant(core_id_t core_id,
       m_dram_access_cost[0] = SubsecondTime::FS() * static_cast<uint64_t>(TimeConverter<float>::NStoFS(Sim()->getCfg()->getFloat("perf_model/dram/latency")));
    }
 
-   // Read the low power access cost. TBD
+   // Read the low power access cost. Modifed to support multimodes.
    int num_modes = Sim()->getCfg()->getInt("memory/num_modes");
    for (int i = 1; i < num_modes; i++){
-     m_dram_access_cost[i]  = SubsecondTime::FS() * static_cast<uint64_t>(TimeConverter<float>::NStoFS(Sim()->getCfg()->getFloat("perf_model/dram/latency_lowpower"))); // Operate in fs for higher precision before converting to uint64_t/SubsecondTime
+     m_dram_access_cost[i]  = SubsecondTime::FS() * static_cast<uint64_t>(TimeConverter<float>::NStoFS(Sim()->getCfg()->getFloatArray("perf_model/dram/latency_lowpower", i-1))); // Operate in fs for higher precision before converting to uint64_t/SubsecondTime
    }
 
    if (Sim()->getCfg()->getBool("perf_model/dram/queue_model/enabled"))

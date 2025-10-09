@@ -8,6 +8,7 @@ import reliability as rlb
 
 LOW_POWER = 1
 NORMAL_POWER = 0
+NUM_MODES=int(sim.config.get('memory/num_modes'))
 
 bank_size=int(sim.config.get('memory/bank_size'))
 no_columns = 1                                      # in Kilo
@@ -34,8 +35,10 @@ bank_static_power = 0
 core_thermal_enabled = sim.config.get("core_thermal/enabled")
 
 mem_dtm = sim.config.get('scheduler/open/dram/dtm')
-dynamic_power_ratio = [1, float(sim.config.get('perf_model/dram/lowpower/lpm_dynamic_power')) for mode in range(NUM_MODES-1)]
-leakage_power_ratio = [1, float(sim.config.get('perf_model/dram/lowpower/lpm_leakage_power')) for mode in (NUM_MODES-1)]
+dynamic_power_ratio = [float(sim.config.get('perf_model/dram/lowpower/lpm_dynamic_power', mode)) for mode in range(NUM_MODES-1)]
+dynamic_power_ratio.insert(0, 1.0) # add 1.0 for normal power mode
+leakage_power_ratio = [float(sim.config.get('perf_model/dram/lowpower/lpm_leakage_power', mode)) for mode in range(NUM_MODES-1)]
+leakage_power_ratio.insert(0, 1.0) # add 1.0 for normal power mode
 
 core_frequency_min = float(sim.config.get('perf_model/core/min_frequency'))*1000
 core_frequency_max = float(sim.config.get('perf_model/core/max_frequency'))*1000
@@ -64,7 +67,6 @@ banks_in_x = int(sim.config.get('memory/banks_in_x'))
 banks_in_y = int(sim.config.get('memory/banks_in_y'))
 banks_in_z = int(sim.config.get('memory/banks_in_z'))
 NUM_BANKS=int(sim.config.get('memory/num_banks'))
-NUM_MODES=int(sim.config.get('memory/num_modes'))
 #number_of_banks = NUM_BANKS
 #banks_in_z = number_of_banks/banks_in_x/banks_in_y  
 #banks_in_z = 2
@@ -422,7 +424,7 @@ class memTherm:
 
     for bank in range(NUM_BANKS):
       leakage = 1.0
-      for mode in NUM_MODES:
+      for mode in range(NUM_MODES):
         if bank_mode_trace[bank] == mode:
           leakage = leakage_power_ratio[mode]
       # print(bank_mode_trace[bank])
