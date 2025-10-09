@@ -34,8 +34,8 @@ bank_static_power = 0
 core_thermal_enabled = sim.config.get("core_thermal/enabled")
 
 mem_dtm = sim.config.get('scheduler/open/dram/dtm')
-lpm_dynamic_power = float(sim.config.get('perf_model/dram/lowpower/lpm_dynamic_power'))
-lpm_leakage_power = float(sim.config.get('perf_model/dram/lowpower/lpm_leakage_power'))
+dynamic_power_ratio = [1, float(sim.config.get('perf_model/dram/lowpower/lpm_dynamic_power')) for mode in range(NUM_MODES-1)]
+leakage_power_ratio = [1, float(sim.config.get('perf_model/dram/lowpower/lpm_leakage_power')) for mode in (NUM_MODES-1)]
 
 core_frequency_min = float(sim.config.get('perf_model/core/min_frequency'))*1000
 core_frequency_max = float(sim.config.get('perf_model/core/max_frequency'))*1000
@@ -422,8 +422,9 @@ class memTherm:
 
     for bank in range(NUM_BANKS):
       leakage = 1.0
-      if bank_mode_trace[bank] == LOW_POWER:
-        leakage = lpm_leakage_power
+      for mode in NUM_MODES:
+        if bank_mode_trace[bank] == mode:
+          leakage = leakage_power_ratio[mode]
       # print(bank_mode_trace[bank])
       bank_mode_trace_string = bank_mode_trace_string + "{:.2f}".format(leakage) + '\t'
     bank_mode_trace_string += "\r\n"
@@ -451,11 +452,12 @@ class memTherm:
     for bank in range(NUM_BANKS):
       if mem_dtm != 'off':
         # In case of low power mode, multiply the read and write accesses with the given scale factor.
-        normal_power_access = accesses_read[bank] * energy_per_read_access + accesses_write[bank] * energy_per_write_access
-        low_power_access    = (accesses_read_lowpower[bank] * energy_per_read_access + accesses_write_lowpower[bank] * energy_per_write_access) * lpm_dynamic_power
-        bank_power_trace[bank] =  (normal_power_access + low_power_access) / (timestep*1000) + bank_static_power + avg_refresh_power
+        energy_access = 0 # store the total access energy of a bank
+        for mode in range(NUM_MODES):
+          energy_access = energy_access + (accesses_read[bank][mode] * energy_per_read_access + accesses_write_lowpower[bank][mode] * energy_per_write_access) * dynamic_power_ratio[mode]
+        bank_power_trace[bank] =  energy_access / (timestep*1000) + bank_static_power + avg_refresh_power
 
-      else:
+      else: # maybe redundant?
         bank_power_trace[bank] = (accesses_read[bank][0] * energy_per_read_access + accesses_write[bank][0] * energy_per_write_access)/(timestep*1000) \
                       + bank_static_power + avg_refresh_power
       bank_power_trace[bank] = round(bank_power_trace[bank], 3)
