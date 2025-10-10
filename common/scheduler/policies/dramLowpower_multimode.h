@@ -27,4 +27,21 @@ private:
     float dtmRecoveredTemperature;
 };
 
+class DramLowpower_multimode : public DramPolicy {
+public:
+    DramLowpower_multimode(
+        const PerformanceCounters *performanceCounters,
+        int numberOfBanks,
+        float dtmCriticalTemperature,
+        float dtmRecoveredTemperature);
+    virtual std::map<int,int> getNewBankModes(std::map<int,int> old_bank_modes);
+
+private:
+    const PerformanceCounters *performanceCounters;
+
+    unsigned int numberOfBanks;
+    float dtmCriticalTemperature;
+    float dtmRecoveredTemperature;
+};
+
 #endif

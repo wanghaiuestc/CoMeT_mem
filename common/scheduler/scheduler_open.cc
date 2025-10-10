@@ -969,7 +969,18 @@ void SchedulerOpen::initDramPolicy(String policyName) {
 			dtmCriticalTemperature,
 			dtmRecoveredTemperature
 		);
-	} //else if (policyName ="XYZ") {... } // Place to instantiate a new memory DTM logic. Implementation is put in "policies" package.
+	}
+	else if (policyName == "lowpower_multimode") {
+
+		float dtmCriticalTemperature = Sim()->getCfg()->getFloat("scheduler/open/dram/dtm/dtm_critical_temperature");
+		float dtmRecoveredTemperature = Sim()->getCfg()->getFloat("scheduler/open/dram/dtm/dtm_recovered_temperature");
+		dramPolicy = new DramLowpower_multimode(
+			performanceCounters,
+			numberOfBanks,
+			dtmCriticalTemperature,
+			dtmRecoveredTemperature
+		);
+	}//else if (policyName ="XYZ") {... } // Place to instantiate a new memory DTM logic. Implementation is put in "policies" package.
 	else {
 		cout << "\n[Scheduler] [Error]: Unknown Dram Algorithm" << endl;
  		exit (1);
