@@ -456,7 +456,7 @@ class memTherm:
         # In case of low power mode, multiply the read and write accesses with the given scale factor.
         energy_access = 0 # store the total access energy of a bank
         for mode in range(NUM_MODES):
-          energy_access = energy_access + (accesses_read[bank][mode] * energy_per_read_access + accesses_write_lowpower[bank][mode] * energy_per_write_access) * dynamic_power_ratio[mode]
+          energy_access = energy_access + (accesses_read[bank][mode] * energy_per_read_access + accesses_write[bank][mode] * energy_per_write_access) * dynamic_power_ratio[mode]
         bank_power_trace[bank] =  energy_access / (timestep*1000) + bank_static_power + avg_refresh_power
 
       else: # maybe redundant?

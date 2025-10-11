@@ -2,6 +2,7 @@
 #include <iomanip>
 #include <iostream>
 #include <map>
+#include "dram_cntlr_multimode.h"
 
 using namespace std;
 
@@ -86,20 +87,27 @@ std::map<int,int> DramLowpower_multimode::getNewBankModes(std::map<int, int> old
 	}
       if (performanceCounters->getTemperatureOfBank(i) < dtmRecoveredTemperature) // temp dropped below recovery temperature
 	{
-	  cout << "[Scheduler][dram-DTM]: thermal violation ended for bank " << i << endl;
 	  if (old_bank_modes[i] == 0) // already mode 0, cannot decrease mode 
 	    new_bank_mode_map[i] = old_bank_modes[i];
 	  else // decrease mode to boost performance
-	    new_bank_mode_map[i] = old_bank_modes[i]-1;
+	    {
+	      new_bank_mode_map[i] = old_bank_modes[i]-1;
+	      cout << "[Scheduler][dram-DTM]: thermal violation ended for bank " << i << ". Change to mode " << new_bank_mode_map[i] << endl;
+	    }
 	}
-      else // temp is above critical temperature
+      else if (performanceCounters->getTemperatureOfBank(i) > dtmCriticalTemperature) // temp is above critical temperature
 	{
-	  cout << "[Scheduler][dram-DTM]: thermal violation detected for bank " << i << endl;
+	  
 	  if (old_bank_modes[i] == NUM_OF_MODES-1) // already highest (slowest) mode, cannot increase mode 
 	    new_bank_mode_map[i] = old_bank_modes[i];
 	  else // increase mode to lower power thus lower temperature
-	    new_bank_mode_map[i] = old_bank_modes[i]+1;
+	    {
+	      new_bank_mode_map[i] = old_bank_modes[i]+1;
+	      cout << "[Scheduler][dram-DTM]: thermal violation detected for bank " << i << ". Change to mode " << new_bank_mode_map[i] << endl;
+	    }
 	}
+      else // temp is between the recovery temperature and critical temperature
+	new_bank_mode_map[i] = old_bank_modes[i]; // do nothing
     }
     return new_bank_mode_map;
 }

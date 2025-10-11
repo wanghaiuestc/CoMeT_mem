@@ -34,8 +34,8 @@ def example2():
 
 
 def example():
-    for freq in (1, 2, 3, 4):  # when adding a new frequency level, make sure that it is also added in base.cfg
-        runlib.run(['open', '{:.1f}GHz'.format(freq), 'constFreq'], 'parsec-blackscholes-simmedium-15')
+    for freq in (4,):  # when adding a new frequency level, make sure that it is also added in base.cfg
+        runlib.run(['open', '{:.1f}GHz'.format(freq), 'constFreq'], 'parsec-blackscholes-simsmall-3')
 
 
 def case_study():
@@ -44,7 +44,7 @@ def case_study():
 
 def main():
     example()
-    case_study()
+    #case_study()
 
 
 if __name__ == '__main__':

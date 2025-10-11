@@ -108,9 +108,9 @@ def save_output(configuration_tags, benchmark, console_output, started, ended):
               'full_power_mem.trace',  # this contains power of memory banks and logic cores (memory controllers)
               'full_power_core.trace',  # this contains power of cores (included for consistency)
               'combined_temperature.trace',
-              'combined_rvalue.trace',
-              'full_rvalue_mem.trace',
-              'full_rvalue_core.trace',
+              #'combined_rvalue.trace',
+              #'full_rvalue_mem.trace',
+              #'full_rvalue_core.trace',
               'PeriodicFrequency.log',
               'PeriodicVdd.log',
               'PeriodicCPIStack.log',):
@@ -125,7 +125,7 @@ def run(configuration_tags, benchmark):
     started = datetime.datetime.now()
     change_configuration_files(configuration_tags)
 
-    args = '-n {number_cores} -c {config} --benchmarks={benchmark} --no-roi --sim-end=last -s memTherm_core' \
+    args = '-n {number_cores} -c {config} --benchmarks={benchmark} --no-roi --sim-end=last -s memTherm_core_multimode' \
         .format(number_cores=config.NUMBER_CORES,
                 config=config.SNIPER_CONFIG,
                 benchmark=benchmark)
