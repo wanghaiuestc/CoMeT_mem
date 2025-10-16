@@ -19,6 +19,13 @@
 
 #include "policies/dramLowpower_multimode.h"
 
+/* add for comecop being */
+// CoMeCop: core-memory co-optimization
+#include "policies/dvfsCoMeCop.h"
+#include "policies/mapCoMeCop.h"
+#include "policies/dramCoMeCop.h" // for dram mode management
+/* add for comecop end */
+
 #include <iomanip>
 #include <random>
 #include <bits/stdc++.h>
@@ -159,7 +166,23 @@ void SchedulerOpen::initMappingPolicy(String policyName) {
 			}
 		}
 		mappingPolicy = new MapFirstUnused(numberOfCores, preferredCoresOrder);
-	} //else if (policyName ="XYZ") {... } //Place to instantiate a new mapping logic. Implementation is put in "policies" package.
+	}
+	/* add for comecop begin */
+	else if (policyName == "comecop")
+	  {
+	    vector<int> preferredCoresOrder;
+	    for (core_id_t core_id = 0; core_id < (core_id_t)Sim()->getConfig()->getApplicationCores(); core_id++)
+	      {
+		int p = Sim()->getCfg()->getIntArray("scheduler/open/preferred_core", core_id);
+		if (p != -1)
+		  preferredCoresOrder.push_back(p);
+		else
+		  break;
+	      }
+	    mappingPolicy = new MapCoMeCop(coreRows, coreColumns, preferredCoresOrder);
+	  }
+	/* add for comecop end */
+	//else if (policyName ="XYZ") {... } //Place to instantiate a new mapping logic. Implementation is put in "policies" package.
 	else {
 		cout << "\n[Scheduler] [Error]: Unknown Mapping Algorithm" << endl;
  		exit (1);
@@ -193,7 +216,14 @@ void SchedulerOpen::initDVFSPolicy(String policyName) {
 			dtmCriticalTemperature,
 			dtmRecoveredTemperature
 		);
-	} //else if (policyName ="XYZ") {... } //Place to instantiate a new DVFS logic. Implementation is put in "policies" package.
+	}
+	/* add for comecop begin */
+	else if (policyName == "comecop")
+	  {
+	    dvfsPolicy = new DVFSCoMeCop(thermalModel, performanceCounters, coreRows, coreColumns, minFrequency, maxFrequency, frequencyStepSize);
+	  }
+	/* add for comecop end */
+	//else if (policyName ="XYZ") {... } //Place to instantiate a new DVFS logic. Implementation is put in "policies" package.
 	else {
 		cout << "\n[Scheduler] [Error]: Unknown DVFS Algorithm" << endl;
  		exit (1);
@@ -980,6 +1010,16 @@ void SchedulerOpen::initDramPolicy(String policyName) {
 			dtmCriticalTemperature,
 			dtmRecoveredTemperature
 		);
+	}
+	else if (policyName == "comecop") {
+		float dtmCriticalTemperature = Sim()->getCfg()->getFloat("scheduler/open/dram/dtm/dtm_critical_temperature");
+		float dtmRecoveredTemperature = Sim()->getCfg()->getFloat("scheduler/open/dram/dtm/dtm_recovered_temperature");
+		dramPolicy = new dramCoMeCop(
+			performanceCounters,
+			numberOfBanks,
+			dtmCriticalTemperature,
+			dtmRecoveredTemperature
+		);
 	}//else if (policyName ="XYZ") {... } // Place to instantiate a new memory DTM logic. Implementation is put in "policies" package.
 	else {
 		cout << "\n[Scheduler] [Error]: Unknown Dram Algorithm" << endl;
@@ -1106,6 +1146,25 @@ void SchedulerOpen::periodic(SubsecondTime time) {
 
 	if ((dvfsPolicy != NULL) && (time.getNS() % dvfsEpoch == 0)) {
 		cout << "\n[Scheduler]: DVFS Control Loop invoked at " << formatTime(time) << endl;
+
+		/* add for comecop begin */
+		// find the active core mapping, store in threadMapping, and write into file
+		// note that only the cores assigned to threads are active, the cores only assigned to task but not to thread are not active
+		if (typeid(*dvfsPolicy).name() == typeid(DVFSCoMeCop).name())
+		  {
+		    std::vector<bool> threadMapping(numberOfCores,false);
+		    for(int coreCounter=0;coreCounter<numberOfCores;coreCounter++)
+		      {
+			if(isAssignedToThread(coreCounter))
+			    threadMapping.at(coreCounter) = true;
+		      }
+		    // write current threadMapping into file
+		    ofstream mapping_file("./system_sim_state/mapping.txt");
+		    for (unsigned int i=0; i<threadMapping.size(); i++)
+		      mapping_file<<threadMapping.at(i)<<"\t";
+		    mapping_file.close();
+		  }
+		/* add for comecop end */
 
 		executeDVFSPolicy();
 	}
