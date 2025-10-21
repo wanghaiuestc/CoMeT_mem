@@ -25,7 +25,7 @@ def execute_comecop_mapping(taskCoreRequirement):
             line_words = re.split('=|#|\s', line)
             line_words = list(filter(None, line_words))
             inactive_power = float(line_words[1])
-        if line.startswith('floorplan'):
+        if line.startswith('sniper_config'):
             line_words = re.split('=|#|\s', line)
             line_words = list(filter(None, line_words))
             name_of_chip = re.split('/|\.', line_words[1])[-2]
