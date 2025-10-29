@@ -7,6 +7,7 @@
 #define __DVFSPOLICY_H
 
 #include <vector>
+#include "performance_counters.h"
 
 class DVFSPolicy {
 public:

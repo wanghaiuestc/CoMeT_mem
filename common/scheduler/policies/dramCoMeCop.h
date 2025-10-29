@@ -1,0 +1,30 @@
+/**
+ * This header implements memory DTM using a low power mode.
+ */
+
+#ifndef __DRAM_COMECOP_H
+#define __DRAM_COMECOP_H
+
+#include <map>
+
+#include "drampolicy_multimode.h"
+#include "performance_counters.h"
+
+class DramCoMeCop : public DramPolicy {
+public:
+    DramCoMeCop(
+        const PerformanceCounters *performanceCounters,
+        int numberOfBanks,
+        float dtmCriticalTemperature,
+        float dtmRecoveredTemperature);
+    virtual std::map<int,int> getNewBankModes(std::map<int,int> old_bank_modes);
+
+private:
+    const PerformanceCounters *performanceCounters;
+
+    unsigned int numberOfBanks;
+    float dtmCriticalTemperature;
+    float dtmRecoveredTemperature;
+};
+
+#endif

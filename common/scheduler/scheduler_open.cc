@@ -179,7 +179,7 @@ void SchedulerOpen::initMappingPolicy(String policyName) {
 		else
 		  break;
 	      }
-	    mappingPolicy = new MapCoMeCop(coreRows, coreColumns, preferredCoresOrder);
+	    mappingPolicy = new MapCoMeCop(coresInX, coresInY, preferredCoresOrder); // use coresInX for coresRow, coresInY for coreColumns
 	  }
 	/* add for comecop end */
 	//else if (policyName ="XYZ") {... } //Place to instantiate a new mapping logic. Implementation is put in "policies" package.
@@ -220,7 +220,7 @@ void SchedulerOpen::initDVFSPolicy(String policyName) {
 	/* add for comecop begin */
 	else if (policyName == "comecop")
 	  {
-	    dvfsPolicy = new DVFSCoMeCop(thermalModel, performanceCounters, coreRows, coreColumns, minFrequency, maxFrequency, frequencyStepSize);
+	    dvfsPolicy = new DVFSCoMeCop(performanceCounters, coresInX, coresInY, minFrequency, maxFrequency, frequencyStepSize); // use coresInX for coresRow, coresInY for coreColumns
 	  }
 	/* add for comecop end */
 	//else if (policyName ="XYZ") {... } //Place to instantiate a new DVFS logic. Implementation is put in "policies" package.
@@ -1014,7 +1014,7 @@ void SchedulerOpen::initDramPolicy(String policyName) {
 	else if (policyName == "comecop") {
 		float dtmCriticalTemperature = Sim()->getCfg()->getFloat("scheduler/open/dram/dtm/dtm_critical_temperature");
 		float dtmRecoveredTemperature = Sim()->getCfg()->getFloat("scheduler/open/dram/dtm/dtm_recovered_temperature");
-		dramPolicy = new dramCoMeCop(
+		dramPolicy = new DramCoMeCop(
 			performanceCounters,
 			numberOfBanks,
 			dtmCriticalTemperature,

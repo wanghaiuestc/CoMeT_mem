@@ -7,15 +7,13 @@
 
 #include <vector>
 #include "dvfspolicy.h"
-#include "thermalModel.h"
 
 class DVFSCoMeCop : public DVFSPolicy {
 public:
-    DVFSCoMeCop(ThermalModel* thermalModel, const PerformanceCounters *performanceCounters, int coreRows, int coreColumns, int minFrequency, int maxFrequency, int frequencyStepSize);
+    DVFSCoMeCop(const PerformanceCounters *performanceCounters, int coreRows, int coreColumns, int minFrequency, int maxFrequency, int frequencyStepSize);
     virtual std::vector<int> getFrequencies(const std::vector<int> &oldFrequencies, const std::vector<bool> &activeCores);
 
 private:
-    ThermalModel* thermalModel;
     const PerformanceCounters *performanceCounters;
     unsigned int coreRows;
     unsigned int coreColumns;
