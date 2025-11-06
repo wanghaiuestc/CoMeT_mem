@@ -3,6 +3,7 @@ import scipy.io as spio
 import numpy as np
 import re
 import comecop
+import os
 
 def execute_comecop_mapping(taskCoreRequirement):
     
@@ -42,13 +43,25 @@ def execute_comecop_mapping(taskCoreRequirement):
     
     # load the multi-core system's thermal model matrices
     core_num = availableCores.shape[0]
-    A = spio.loadmat('./comecop_thermal_matrices/'+name_of_chip+'_A.mat')['A']
+    A = spio.loadmat('./model_extract/'+name_of_chip+'/A.mat')['A']
+
+    # total core number of the multi/many core system
+    core_num = availableCores.shape[0]
+    # total memory bank number
+    mem_num = A.shape[0] - core_num
+
+    # divide A matrix for cores and memory banks
+    Acm = A[mem_num:][:,:mem_num]
+    Acc = A[mem_num:][:,mem_num:]
 
     # formulate the static power vector: in hotsniper, every core (active or not) has the same static power
-    P_s = np.full((A.shape[0],), inactive_power)
+    P_s = np.full((Acc.shape[0],), inactive_power)
+    # The power of memory banks.
+    P_m = np.loadtxt('./combined_instpower.trace',skiprows=1)[core_num:]
+    #P_m = np.full((mem_num,), 0)
 
     # compute the new active core indexes using comecop_mapping
-    cores_to_activate = comecop.comecop_map(A, temp_max, temp_amb, taskCoreRequirement, activeCores, availableCores, preferredCoresOrder, P_s)
+    cores_to_activate = comecop.comecop_map(Acc, Acm, temp_max, temp_amb, taskCoreRequirement, activeCores, availableCores, preferredCoresOrder, P_s, P_m)
 
     print('[Scheduler] [CoMeCop]: CoMeCop determined cores to activate: ', cores_to_activate)
     

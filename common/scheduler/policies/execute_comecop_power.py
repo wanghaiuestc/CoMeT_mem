@@ -33,7 +33,7 @@ def execute_comecop_power(core_num):
             line_words = re.split('=|#|\s', line)
             line_words = list(filter(None, line_words))
             inactive_power = float(line_words[1])
-        if line.startswith('floorplan'):
+        if line.startswith('sniper_config'):
             line_words = re.split('=|#|\s', line)
             line_words = list(filter(None, line_words))
             name_of_chip = re.split('/|\.', line_words[1])[-2]
@@ -41,10 +41,10 @@ def execute_comecop_power(core_num):
         
     # load the multi-core system's thermal model matrices
     if comecop_mode == 'steady':
-        A = spio.loadmat('./comecop_thermal_matrices/'+name_of_chip+'_A.mat')['A']
+        A = spio.loadmat('./model_extract/'+name_of_chip+'/A.mat')['A']
     elif comecop_mode == 'transient':
         if dvfs_epoch == 1000000:
-            A = spio.loadmat('./comecop_thermal_matrices/'+name_of_chip+'_A_1ms.mat')['A_bar']
+            A = spio.loadmat('./model_extract/'+name_of_chip+'/A_1ms.mat')['A_bar']
         else:
             raise Exception("comecop current only supports dvfs_epoch = 1000000, please modify base.cfg")
     else:
@@ -54,15 +54,25 @@ def execute_comecop_power(core_num):
     core_map = np.loadtxt('./system_sim_state/mapping.txt')
     core_map = np.asarray(core_map, dtype = bool) # use bool type to extract Ai matrix from A
 
+    # total core number of the multi/many core system
+    core_num = core_map.shape[0]
+    # total memory bank number
+    mem_num = A.shape[0] - core_num
+
+    # divide A matrix for cores and memory banks
+    Acm = A[mem_num:][:,:mem_num]
+    Acc = A[mem_num:][:,mem_num:]
+
     # load the current temperature/power from files, ingore the first line which contains core names
-    T_c = np.loadtxt('./InstantaneousTemperature.log',skiprows=1) # current temperature
-    P_k = np.loadtxt('./InstantaneousPower.log',skiprows=1) # previous power consumption
+    T_c = np.loadtxt('./combined_insttemperature.trace',skiprows=1)[:core_num] # current temperature of cores
+    P_k = np.loadtxt('./combined_instpower.trace',skiprows=1)[:core_num] # previous power consumption of cores
+    P_m = np.loadtxt('./combined_instpower.trace',skiprows=1)[core_num:] # previous power consumption of memory banks
 
     # formulate the static power vector: in hotsniper, every core (active or not) has the same static power
-    P_s = np.full((A.shape[0],), inactive_power)
+    P_s = np.full((Acc.shape[0],), inactive_power)
     
     # Compute power budget using comecop power budgeting core function
-    P = comecop.comecop_power(A, core_map, temp_max, temp_amb, P_s, P_k, T_c, comecop_mode)
+    P = comecop.comecop_power(Acc, Acm, core_map, temp_max, temp_amb, P_s, P_m, P_k, T_c, comecop_mode)
     
     print('[Scheduler] [CoMeCop]: Power budget determined by CoMeCop (W): ', P)
 

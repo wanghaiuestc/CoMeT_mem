@@ -5,6 +5,10 @@
 #include <set>
 #include <fstream>
 
+// to create directory for system_sim_state
+#include <sys/stat.h>
+#include <sys/types.h>
+
 using namespace std;
 
 // Just do initiation. Note that unlike the firstunused method, preferredCoresOrder do not contain the cores not specified by user, because their order should be computed at runtime by MapCoMeCop::map
@@ -23,6 +27,9 @@ std::vector<int> MapCoMeCop::map(String taskName, int taskCoreRequirement, const
 	/* CoMeCop mapping core code begin */
 
 	// write availableCores and activeCores in info_for_mapping.txt as inputs to comecop_mapping.py
+	int create_directory = mkdir("./system_sim_state", 0777);
+	if (create_directory == 0)
+	  printf("[Scheduler] [CoMeCop]: New directory system_sim_state is created to store info_for_mapping.txt!\n");
 	ofstream mapping_info_file("./system_sim_state/info_for_mapping.txt");
 	for (unsigned int i=0; i<availableCores.size();i++){
 	  mapping_info_file << availableCores[i] << "\t";
