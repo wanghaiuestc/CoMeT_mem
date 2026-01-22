@@ -3,6 +3,7 @@
 #include "powermodel.h"
 #include "simulator.h"
 #include "config.hpp"
+#include <cmath>
 
 using namespace std;
 
