@@ -45,6 +45,18 @@ def execute_comecop_mapping(taskCoreRequirement):
     core_num = availableCores.shape[0]
     A = spio.loadmat('./model_extract/'+name_of_chip+'/A.mat')['A']
 
+    # form the M_mc matrix, which is the mapping of last layer memory to core
+    # m2c: mapping of core to memory, manually given now for gainstown_3D
+    # later, should form automatically by looking at config files
+    # for example, gainestown_3D.cfg->hotspot/3D->mem_bank_8.flp and cores.flp
+    m2c = [1, 1, 2, 2, 1, 1, 2, 2, 3, 3, 4, 4, 3, 3, 4, 4]
+    M_mc = np.full((core_num,mem_num), 0)
+    for i in range(len(m2c)):
+        M_mc[m2c(i), i] = 1
+    # divide by number of mem banks per core
+    for i in range(core_num):
+        M_mc[i,:] = M_mc[i,:]/(m2c.count(i))
+
     # total core number of the multi/many core system
     core_num = availableCores.shape[0]
     # total memory bank number
