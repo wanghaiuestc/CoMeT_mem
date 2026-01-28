@@ -59,20 +59,33 @@ def execute_comecop_power(core_num):
     # total memory bank number
     mem_num = A.shape[0] - core_num
 
+    # form the M_mc matrix, which is the mapping of last layer memory banks to cores
+    # m2c: mapping of core to memory, manually given now for gainstown_3D
+    # later, should form automatically by looking at config files
+    # for example, gainestown_3D.cfg->hotspot/3D->mem_bank_8.flp and cores.flp
+    m2c = [1, 1, 2, 2, 1, 1, 2, 2, 3, 3, 4, 4, 3, 3, 4, 4]
+    M_mc = np.full((core_num,mem_num), 0)
+    for i in range(len(m2c)):
+        M_mc[m2c(i), i] = 1
+    # divide by number of mem banks per core
+    for i in range(core_num):
+        M_mc[i,:] = M_mc[i,:]/(m2c.count(i))
+
     # divide A matrix for cores and memory banks
-    Acm = A[mem_num:][:,:mem_num]
-    Acc = A[mem_num:][:,mem_num:]
+    Amc = A[:mem_num][:,mem_num:]
+    Amm = A[:mem_num][:,:mem_num]
 
     # load the current temperature/power from files, ingore the first line which contains core names
-    T_c = np.loadtxt('./combined_insttemperature.trace',skiprows=1)[:core_num] # current temperature of cores
+    T_m = np.loadtxt('./combined_insttemperature.trace',skiprows=1)[core_num:] # current temperature of memory banks
+    T_mc = M_mc@T_m # average the temperature of the last layer memory banks for each vertical core
     P_k = np.loadtxt('./combined_instpower.trace',skiprows=1)[:core_num] # previous power consumption of cores
     P_m = np.loadtxt('./combined_instpower.trace',skiprows=1)[core_num:] # previous power consumption of memory banks
 
     # formulate the static power vector: in hotsniper, every core (active or not) has the same static power
-    P_s = np.full((Acc.shape[0],), inactive_power)
+    P_s = np.full((core_num,), inactive_power)
     
     # Compute power budget using comecop power budgeting core function
-    P = comecop.comecop_power(Acc, Acm, core_map, temp_max, temp_amb, P_s, P_m, P_k, T_c, comecop_mode)
+    P = comecop.comecop_power(Amm, Amc, core_map, temp_max, temp_amb, P_s, P_m, P_k, T_c, M_mc, comecop_mode)
     
     print('[Scheduler] [CoMeCop]: Power budget determined by CoMeCop (W): ', P)
 

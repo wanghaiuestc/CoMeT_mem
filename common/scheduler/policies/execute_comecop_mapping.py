@@ -45,7 +45,7 @@ def execute_comecop_mapping(taskCoreRequirement):
     core_num = availableCores.shape[0]
     A = spio.loadmat('./model_extract/'+name_of_chip+'/A.mat')['A']
 
-    # form the M_mc matrix, which is the mapping of last layer memory to core
+    # form the M_mc matrix, which is the mapping of last layer memory banks to cores
     # m2c: mapping of core to memory, manually given now for gainstown_3D
     # later, should form automatically by looking at config files
     # for example, gainestown_3D.cfg->hotspot/3D->mem_bank_8.flp and cores.flp
@@ -63,17 +63,17 @@ def execute_comecop_mapping(taskCoreRequirement):
     mem_num = A.shape[0] - core_num
 
     # divide A matrix for cores and memory banks
-    Acm = A[mem_num:][:,:mem_num]
-    Acc = A[mem_num:][:,mem_num:]
+    Amc = A[:mem_num][:,mem_num:]
+    Amm = A[:mem_num][:,:mem_num]
 
     # formulate the static power vector: in hotsniper, every core (active or not) has the same static power
-    P_s = np.full((Acc.shape[0],), inactive_power)
+    P_s = np.full((core_num,), inactive_power)
     # The power of memory banks.
     P_m = np.loadtxt('./combined_instpower.trace',skiprows=1)[core_num:]
     #P_m = np.full((mem_num,), 0)
 
     # compute the new active core indexes using comecop_mapping
-    cores_to_activate = comecop.comecop_map(Acc, Acm, temp_max, temp_amb, taskCoreRequirement, activeCores, availableCores, preferredCoresOrder, P_s, P_m)
+    cores_to_activate = comecop.comecop_map(Amm, Amc, temp_max, temp_amb, taskCoreRequirement, activeCores, availableCores, preferredCoresOrder, P_s, P_m, M_mc)
 
     print('[Scheduler] [CoMeCop]: CoMeCop determined cores to activate: ', cores_to_activate)
     

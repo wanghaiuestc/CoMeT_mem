@@ -1,9 +1,9 @@
 import numpy as np
 
-def comecop_map(Acc, Acm, temp_max, temp_amb, taskCoreRequirement, activeCores, availableCores, preferredCoresOrder, P_s, P_m):
+def comecop_map(Amm, Amc, temp_max, temp_amb, taskCoreRequirement, activeCores, availableCores, preferredCoresOrder, P_s, P_m, M_mc):
     # The function to find the CoMeCop optimized active core map
     # Inputs:
-    # Acc, Acm: system thermal model matrix
+    # Amm, Amc: submatrices of the system thermal model matrix A where usually A = B^T G^{-1} B
     # temp_max: temperature threshold scalar
     # temp_amb: ambient temperature scalar
     # taskCoreRequirement: the number of new active cores need to be mapped
@@ -12,6 +12,7 @@ def comecop_map(Acc, Acm, temp_max, temp_amb, taskCoreRequirement, activeCores, 
     # preferredCoresOrder: the user specified activation order vector, -1 indicates the end of the preferred cores. These cores should be activated first (if available) before CoMeCop computation. If user do not specify any activation order, simply set all elements to -1.
     # P_s: static power vector, each element is the static power value of each core, use an all zero vector if no static power
     # P_m: power of memory banks
+    # M_mc: mapping of last layer memory banks to cores
     # Output:
     # cores_to_activate: vector of the new active core indexes
 
@@ -34,18 +35,18 @@ def comecop_map(Acc, Acm, temp_max, temp_amb, taskCoreRequirement, activeCores, 
     # If taskCoreRequirement <= n_ipc, then we are simply done without CoMeCop computation. Otherwise (if taskCoreRequirement > n_ipc), we need to determine the remaining active cores using CoMeCop iterations.
     if taskCoreRequirement > n_ipc:
         # initiate CoMeCop iterations
-        T_s = Acc@P_s # static power's impact on temperature, should be substracted from T_th later
-        T_m = Acm@P_m # memory power's impact on temperature, should be substracted from T_th later
+        T_s = Amc@P_s # static power's impact on temperature, should be substracted from T_th later
+        T_m = Amm@P_m # memory power's impact on temperature, should be substracted from T_th later
         T_th = np.full((core_num,), temp_max - temp_amb) - T_s - T_m # threshold temperature vector
         if np.sum(activeCores) > 0:
-            Ai = np.atleast_2d(Acc[activeCores][:,activeCores])
+            Ai = np.atleast_2d(M_mc[activeCores][:,:])@np.atleast_2d(Amc[:][:,activeCores])
             T_th_i = T_th[activeCores]
             Pi = np.linalg.solve(Ai, T_th_i) # power budget of the existing active cores
-            T_rm = T_th[availableCores] - Acc[availableCores][:,activeCores]@Pi # temperature threshold headroom of the available cores (candidates) by substracting the existing active cores' thermal impact
+            T_rm = T_th[availableCores] - M_mc[availableCores][:,:]@Amc[:][:,activeCores]@Pi # temperature threshold headroom of the available cores (candidates) by substracting the existing active cores' thermal impact
         else: # when there is no existing active core and no user preferred core
             T_rm = T_th[availableCores]
             
-        Aa = np.atleast_2d(Acc[availableCores][:,availableCores])
+        Aa = np.atleast_2d(M_mc[availableCores][:,:])@np.atleast_2d(Amc[:][:,availableCores])
         idx_available_cores = np.flatnonzero(availableCores)
         for i in range(n_ipc, taskCoreRequirement):
             # find the core in available cores (candidates) which leads to the largest power budget (indicated by the largest inner product with T_rm)
@@ -57,41 +58,42 @@ def comecop_map(Acc, Acm, temp_max, temp_amb, taskCoreRequirement, activeCores, 
             cores_to_activate[i] = idx_available_cores[idx] # add the new active core (idx) to the list of cores to activate as the final output
             availableCores[idx_available_cores[idx]] = False
             activeCores[idx_available_cores[idx]] = True
-            Aa = np.atleast_2d(Acc[availableCores][:,availableCores])
+            Aa = np.atleast_2d(M_mc[availableCores][:,:])@np.atleast_2d(Amc[:][:,availableCores])
             idx_available_cores = np.flatnonzero(availableCores)
             
             # update T_rm
-            Ai = np.atleast_2d(Acc[activeCores][:,activeCores])
+            Ai = np.atleast_2d(M_mc[activeCores][:,:])@np.atleast_2d(Amc[:][:,activeCores])
             T_th_i = T_th[activeCores]
             Pi = np.linalg.solve(Ai, T_th_i)
-            T_rm = T_th[availableCores] - Acc[availableCores][:,activeCores]@Pi
+            T_rm = T_th[availableCores] - M_mc[availableCores][:,:]@Amc[:][:,activeCores]@Pi
 
     return cores_to_activate
 
-def comecop_power(Acc, Acm, core_map, temp_max, temp_amb, P_s, P_m, P_k, T_c, comecop_mode):
+def comecop_power(Amm, Amc, core_map, temp_max, temp_amb, P_s, P_m, P_k, T_mc, M_mc, comecop_mode):
     # The function to compute the CoMeCop power budget for a given active core map
     # Inputs:
-    # A: system matrix, usually A = B^T G^{-1} B
+    # Amm, Amc: submatrices of the system thermal model matrix A where usually A = B^T G^{-1} B
     # core_map: boolean vector of the active core map, indicating if each core is active (True) or inactive (False)
     # temp_max: temperature threshold scalar
     # temp_amb: ambient temperature scalar
     # P_s: static power vector, each element is the static power value of each core, use an all zero vector if no static power
     # P_k: power vector of all cores at the previous step (assume current time is t, power budgeting/DVFS step is h, P_k is the power from time t-h to t, and we want to compute the power budget P for time t to t+h)
-    # T_c: temperature vector of all cores at the current time (at time t in the example of P_k)
+    # T_mc: temperature vector of last layer memory banks averaged for each vertical core at the current time (at time t in the example of P_k)
+    # M_mc: mapping of last layer memory banks to cores
     # comecop_mode: 'steady' for steady state CoMeCop and 'transient' for transient CoMeCop
     # Output:
     # P: power budget of the active cores according to core_map
     
     # Compute the static power's impact on temperature. If the static power is assumed to be constant (such as in HotSniper), this impact is constant and actually can be pre-computed only once outside
-    T_s = Acc@P_s # static power's impact on temperature, should be substracted from T_th later
-    T_m = Acm@P_m # memory power's impact on temperature, should be substracted from T_th later
+    T_s = Amc@P_s # static power's impact on temperature, should be substracted from T_th later
+    T_m = Amm@P_m # memory power's impact on temperature, should be substracted from T_th later
     
     # formulate the Ai matrix (a submatrix of A according to the active core mapping)
-    Ai = np.atleast_2d(Acc[core_map][:,core_map])
+    Ai = np.atleast_2d(M_mc[core_map][:,:])@np.atleast_2d(Amc[:][:,core_map])
     if comecop_mode == 'steady': # for steady state CoMeCop
         T_th = np.full((Ai.shape[0],), temp_max - temp_amb) - T_s[core_map] - T_m[core_map] # threshold temperature vector
     else: # for transient CoMeCop
-        T_th = np.full((Ai.shape[0],), temp_max) - T_c[core_map] + Ai@P_k[core_map] - T_s[core_map] - T_m[core_map]
+        T_th = np.full((Ai.shape[0],), temp_max) - T_mc[core_map] + Ai@P_k[core_map] - T_s[core_map] - T_m[core_map]
         
     # Compute power budget with current active core mapping, solve power budget P
     P = np.linalg.solve(Ai, T_th) + P_s[core_map]
