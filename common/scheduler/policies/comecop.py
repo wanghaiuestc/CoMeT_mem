@@ -37,7 +37,7 @@ def comecop_map(Amm, Amc, temp_max, temp_amb, taskCoreRequirement, activeCores, 
         # initiate CoMeCop iterations
         T_s = Amc@P_s # static power's impact on temperature, should be substracted from T_th later
         T_m = Amm@P_m # memory power's impact on temperature, should be substracted from T_th later
-        T_th = np.full((core_num,), temp_max - temp_amb) - T_s - T_m # threshold temperature vector
+        T_th = np.full((core_num,), temp_max - temp_amb) - M_mc@(T_s + T_m) # threshold temperature vector
         if np.sum(activeCores) > 0:
             Ai = np.atleast_2d(M_mc[activeCores][:,:])@np.atleast_2d(Amc[:][:,activeCores])
             T_th_i = T_th[activeCores]
@@ -91,7 +91,7 @@ def comecop_power(Amm, Amc, core_map, temp_max, temp_amb, P_s, P_m, P_k, T_mc, M
     # formulate the Ai matrix (a submatrix of A according to the active core mapping)
     Ai = np.atleast_2d(M_mc[core_map][:,:])@np.atleast_2d(Amc[:][:,core_map])
     if comecop_mode == 'steady': # for steady state CoMeCop
-        T_th = np.full((Ai.shape[0],), temp_max - temp_amb) - T_s[core_map] - T_m[core_map] # threshold temperature vector
+        T_th = np.full((Ai.shape[0],), temp_max - temp_amb) - (M_mc@(T_s + T_m))[core_map] # threshold temperature vector
     else: # for transient CoMeCop
         T_th = np.full((Ai.shape[0],), temp_max) - T_mc[core_map] + Ai@P_k[core_map] - T_s[core_map] - T_m[core_map]
         

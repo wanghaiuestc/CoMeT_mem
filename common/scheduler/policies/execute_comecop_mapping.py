@@ -3,6 +3,7 @@ import scipy.io as spio
 import numpy as np
 import re
 import comecop
+import comecop_util
 import os
 
 def execute_comecop_mapping(taskCoreRequirement):
@@ -12,25 +13,7 @@ def execute_comecop_mapping(taskCoreRequirement):
     taskCoreRequirement = int(taskCoreRequirement)
 
     # read configurations from base.cfg, including max_temperature (threshold temperature), ambient_temperature, etc
-    file_config = open('../config/base.cfg')
-    for line in file_config:
-        if line.startswith('max_temperature'):
-            line_words = re.split('=|#|\s', line) # split the line into words with splitor '=', '#', and whitespaces
-            line_words = list(filter(None, line_words)) # filt out the whitespaces
-            temp_max = float(line_words[1])
-        if line.startswith('ambient_temperature'):
-            line_words = re.split('=|#|\s', line)
-            line_words = list(filter(None, line_words))
-            temp_amb = float(line_words[1])
-        if line.startswith('inactive_power'):
-            line_words = re.split('=|#|\s', line)
-            line_words = list(filter(None, line_words))
-            inactive_power = float(line_words[1])
-        if line.startswith('sniper_config'):
-            line_words = re.split('=|#|\s', line)
-            line_words = list(filter(None, line_words))
-            name_of_chip = re.split('/|\.', line_words[1])[-2]
-    file_config.close()
+    temp_max, temp_amb, _, _, inactive_power, name_of_chip = comecop_util.read_config()
 
     # load the mapping information from file info_for_mapping.txt, saved in mapCoMeCop::map in mapCoMeCop.cc
     mapping_info = np.loadtxt('./system_sim_state/info_for_mapping.txt', dtype=int)
@@ -45,22 +28,13 @@ def execute_comecop_mapping(taskCoreRequirement):
     core_num = availableCores.shape[0]
     A = spio.loadmat('./model_extract/'+name_of_chip+'/A.mat')['A']
 
-    # form the M_mc matrix, which is the mapping of last layer memory banks to cores
-    # m2c: mapping of core to memory, manually given now for gainstown_3D
-    # later, should form automatically by looking at config files
-    # for example, gainestown_3D.cfg->hotspot/3D->mem_bank_8.flp and cores.flp
-    m2c = [1, 1, 2, 2, 1, 1, 2, 2, 3, 3, 4, 4, 3, 3, 4, 4]
-    M_mc = np.full((core_num,mem_num), 0)
-    for i in range(len(m2c)):
-        M_mc[m2c(i), i] = 1
-    # divide by number of mem banks per core
-    for i in range(core_num):
-        M_mc[i,:] = M_mc[i,:]/(m2c.count(i))
-
     # total core number of the multi/many core system
     core_num = availableCores.shape[0]
     # total memory bank number
     mem_num = A.shape[0] - core_num
+
+    # form the M_mc matrix, which is the mapping of last layer memory banks to cores
+    M_mc = comecop_util.form_lastlayer_mapping(core_num, mem_num)
 
     # divide A matrix for cores and memory banks
     Amc = A[:mem_num][:,mem_num:]
