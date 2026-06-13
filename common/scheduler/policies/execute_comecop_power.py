@@ -58,7 +58,7 @@ def execute_comecop_power(core_num):
     # Write power budget P into file
     file_power = open('./system_sim_state/comecop_power.txt', 'w')
     for power in P:
-        file_power.write(str(np.asscalar(power))+' ')
+        file_power.write(str(power.item())+' ')
     file_power.close()
 
 if len(sys.argv) != 2:

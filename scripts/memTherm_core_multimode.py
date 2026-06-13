@@ -173,7 +173,6 @@ hotspot_command = executable  \
                   + ' -all_transient_file ' + hotspot_all_transient_file \
                   + ' -grid_steady_file ' + hotspot_grid_steady_file \
                   + ' -steady_state_print_disable 1 ' \
-                  + ' -l 1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1, ' \
                   + ' -type ' + type_of_stack \
                   + ' -sampling_intvl ' + str(interval_sec) \
                   + ' -grid_layer_file ' + hotspot_layer_file \
@@ -186,7 +185,6 @@ if mem_dtm != "off":
 #if type_of_stack!="DDR":
 #hotspot_command = hotspot_command + ' -grid_layer_file ' + hotspot_layer_file \
 #                        +' -detailed_3D on'
-print hotspot_command                  
 
 c_hotspot_config_path = hotspot_config_path
 #c_init_file_external = c_hotspot_config_path + sim.config.get('hotspot/init_file_external_core')
@@ -540,7 +538,6 @@ class memTherm:
                     + ' -all_transient_file ' + c_hotspot_all_transient_file \
                     + ' -grid_steady_file ' + c_hotspot_grid_steady_file \
                     + ' -steady_state_print_disable 1 ' \
-                    + ' -l 1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1, ' \
                     + ' -type Core ' \
                     + ' -sampling_intvl ' + str(interval_sec) \
                     + ' -grid_layer_file ' + c_hotspot_layer_file \
@@ -672,6 +669,8 @@ class memTherm:
     if (init_file_external!= "None") or (not first_run):
         hcmd += ' -init_file ' + init_file
     os.system(hcmd)
+    print 'Use hotspot: '
+    print hcmd
     self.format_trace_file(True, c_temperature_trace_file, temperature_trace_file, combined_temperature_trace_file, combined_insttemperature_trace_file)
     self.format_trace_file(True, c_power_trace_file, power_trace_file, combined_power_trace_file, combined_instpower_trace_file)
     self.format_trace_file(True, c_power_trace_file_total, power_trace_file_total, combined_power_trace_file_total, combined_instpower_trace_file_total)
